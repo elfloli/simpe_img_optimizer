@@ -58,7 +58,8 @@ Make sure to check “Add to PATH” during installation.
 
 Run this command in your terminal:
 
-pip install pillow tkinterdnd2
+pip install pillow tkinterdnd2 darkdetect
+
 
 
 (No installation needed for Tkinter — it comes with Python.)
