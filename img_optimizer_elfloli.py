@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Image Optimizer — Fluent Full Dark Theme Edition
-elfloli special build
+START BUTTON ON TOP + JPG CHECKBOX UNDER IT
 """
 
 import os
@@ -16,9 +16,6 @@ import winreg
 import ctypes
 
 
-# =====================================================================
-#                      FORCE DARK TITLEBAR
-# =====================================================================
 def force_dark_titlebar(window):
     try:
         HWND = ctypes.windll.user32.GetParent(window.winfo_id())
@@ -34,10 +31,7 @@ def force_dark_titlebar(window):
         pass
 
 
-# =====================================================================
-#                      DETECT WINDOWS THEME
-# =====================================================================
-def detect_windows_dark_mode() -> bool:
+def detect_windows_dark_mode():
     try:
         reg = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
@@ -46,13 +40,10 @@ def detect_windows_dark_mode() -> bool:
         value, _ = winreg.QueryValueEx(reg, "AppsUseLightTheme")
         winreg.CloseKey(reg)
         return value == 0
-    except Exception:
+    except:
         return False
 
 
-# =====================================================================
-#                  FLUENT FULL DARK STYLE FOR TTK
-# =====================================================================
 def apply_fluent_style(root: tk.Tk):
     DARK = {
         "bg": "#111111",
@@ -69,104 +60,44 @@ def apply_fluent_style(root: tk.Tk):
         "pg_fg": "#3A8DFF"
     }
 
-    LIGHT = {
-        "bg": "#F3F4F6",
-        "panel": "#FFFFFF",
-        "panel_alt": "#FAFAFB",
-        "text": "#111827",
-        "muted": "#374151",
-        "btn": "#E6E7E9",
-        "btn_hover": "#DCDDE0",
-        "accent": "#2563EB",
-        "entry_bg": "#FFFFFF",
-        "border": "#D1D5DB",
-        "pg_bg": "#E5E7EB",
-        "pg_fg": "#2563EB"
-    }
-
-    pal = DARK if detect_windows_dark_mode() else LIGHT
+    pal = DARK
 
     style = ttk.Style()
     style.theme_use("clam")
 
-    # Global
     root.configure(bg=pal["bg"])
     style.configure(".", background=pal["bg"], foreground=pal["text"])
 
-    # Frame
     style.configure("TFrame", background=pal["panel"])
-    style.configure("TLabelframe", background=pal["panel"])
-    style.configure("TLabelframe.Label", background=pal["panel"], foreground=pal["text"])
-
-    # Label
     style.configure("TLabel", background=pal["bg"], foreground=pal["text"])
 
-    # Buttons
-    style.configure(
-        "TButton",
-        background=pal["btn"],
-        foreground=pal["text"],
-        bordercolor=pal["border"],
-        focusthickness=2,
-        focuscolor=pal["accent"]
-    )
-    style.map(
-        "TButton",
-        background=[("active", pal["btn_hover"])],
-        foreground=[("active", pal["text"])]
-    )
+    style.configure("TButton",
+                    background=pal["btn"],
+                    foreground=pal["text"],
+                    bordercolor=pal["border"])
+    style.map("TButton",
+              background=[("active", pal["btn_hover"])])
 
-    # Entry
-    style.configure(
-        "TEntry",
-        fieldbackground=pal["entry_bg"],
-        background=pal["entry_bg"],
-        foreground=pal["text"],
-        bordercolor=pal["border"]
-    )
+    style.configure("TEntry",
+                    fieldbackground=pal["entry_bg"],
+                    background=pal["entry_bg"],
+                    foreground=pal["text"])
 
-    # Checkbutton
-    style.configure(
-        "TCheckbutton",
-        background=pal["bg"],
-        foreground=pal["text"],
-    )
-    style.map(
-        "TCheckbutton",
-        background=[("active", pal["panel"])],
-        foreground=[("active", pal["text"])]
-    )
+    style.configure("TCheckbutton",
+                    background=pal["bg"],
+                    foreground=pal["text"])
 
-    # Scale
-    style.configure(
-        "Horizontal.TScale",
-        background=pal["panel"],
-        troughcolor=pal["border"],
-        sliderrelief="flat",
-        slidercolor=pal["accent"]
-    )
-
-    # Progressbar
-    style.configure(
-        "TProgressbar",
-        background=pal["pg_fg"],
-        troughcolor=pal["pg_bg"],
-        bordercolor=pal["border"],
-        lightcolor=pal["pg_fg"],
-        darkcolor=pal["pg_fg"]
-    )
+    style.configure("TProgressbar",
+                    background=pal["pg_fg"],
+                    troughcolor=pal["pg_bg"])
 
     return pal
 
 
-# =====================================================================
-#                     IMAGE OPTIMIZATION
-# =====================================================================
 def optimize_image(input_path, output_path, quality, palette_optimize, force_jpg):
     try:
         img = Image.open(input_path)
 
-        # Remove EXIF
         data = list(img.getdata())
         img_no_exif = Image.new(img.mode, img.size)
         img_no_exif.putdata(data)
@@ -175,22 +106,22 @@ def optimize_image(input_path, output_path, quality, palette_optimize, force_jpg
             if img_no_exif.mode in ("RGBA", "P"):
                 img_no_exif = img_no_exif.convert("RGB")
             output_path = os.path.splitext(output_path)[0] + ".jpg"
-            img_no_exif.save(output_path, "JPEG", quality=quality, optimize=True, progressive=True)
+            img_no_exif.save(output_path, "JPEG", quality=quality, optimize=True)
             return True, output_path
 
         ext = (img.format or "").upper()
 
-        if ext in ("JPG", "JPEG", "JFIF"):
-            img_no_exif.save(output_path, "JPEG", quality=quality, optimize=True, progressive=True)
+        if ext in ("JPG", "JPEG"):
+            img_no_exif.save(output_path, "JPEG", quality=quality, optimize=True)
             return True, output_path
 
-        elif ext == "PNG":
+        if ext == "PNG":
             if palette_optimize:
                 img_no_exif = img_no_exif.convert("P", palette=Image.ADAPTIVE)
             img_no_exif.save(output_path, optimize=True)
             return True, output_path
 
-        elif ext == "WEBP":
+        if ext == "WEBP":
             img_no_exif.save(output_path, "WEBP", quality=quality, method=6)
             return True, output_path
 
@@ -232,17 +163,13 @@ def process_folder(folder, out, quality, palette_opt, force_jpg, progress_cb):
                 progress_cb(processed, total, inp)
 
 
-# =====================================================================
-#                               GUI APP
-# =====================================================================
 class ImageOptimizerApp:
     def __init__(self, root: tk.Tk):
         self.root = root
-        root.title("Image Optimizer — Fluent Dark")
-        root.geometry("660x680")
+        root.title("Image Optimizer — Fluent UI")
+        root.geometry("760x870")
 
         force_dark_titlebar(root)
-
         self.palette = apply_fluent_style(root)
 
         self.input_path = tk.StringVar()
@@ -260,33 +187,57 @@ class ImageOptimizerApp:
         root.drop_target_register(DND_FILES)
         root.dnd_bind("<<Drop>>", self.on_drop)
 
-    # ============================ UI BUILD ============================
     def build_ui(self):
-        p = {"padx": 12, "pady": 6}
+        p = {"padx": 14, "pady": 8}
 
-        # Input
-        top = ttk.Frame(self.root, style="TFrame")
+        # ============================================================
+        # BIG START BUTTON AT TOP
+        # ============================================================
+        top_start = ttk.Frame(self.root)
+        top_start.pack(fill="x", padx=12, pady=12)
+
+        ttk.Button(
+            top_start,
+            text="🚀 START OPTIMIZATION 🚀",
+            command=self.start
+        ).pack(fill="x", ipadx=10, ipady=14)
+
+        # ============================================================
+        # JPG CHECKBOX under START button
+        # ============================================================
+        ttk.Checkbutton(
+            top_start,
+            text="Always save as JPG",
+            variable=self.force_jpg
+        ).pack(anchor="w", pady=4, padx=2)
+
+        # ============================================================
+        # INPUT SELECTOR
+        # ============================================================
+        top = ttk.Frame(self.root)
         top.pack(fill="x", **p)
 
         ttk.Label(top, text="File / Folder:").pack(anchor="w")
 
-        row = ttk.Frame(top, style="TFrame")
+        row = ttk.Frame(top)
         row.pack(fill="x")
 
-        ttk.Entry(row, textvariable=self.input_path, width=58).pack(side="left", fill="x", expand=True)
-
+        ttk.Entry(row, textvariable=self.input_path, width=60).pack(side="left", fill="x", expand=True)
         ttk.Button(row, text="File", command=self.choose_file).pack(side="left", padx=6)
         ttk.Button(row, text="Folder", command=self.choose_folder).pack(side="left")
 
-        # Output
+        # OUTPUT
         ttk.Label(self.root, text="Save to folder:").pack(anchor="w", padx=12)
-        out_row = ttk.Frame(self.root, style="TFrame")
+        out_row = ttk.Frame(self.root)
         out_row.pack(fill="x", **p)
-        ttk.Entry(out_row, textvariable=self.output_path, width=58).pack(side="left", fill="x", expand=True)
+
+        ttk.Entry(out_row, textvariable=self.output_path, width=60).pack(side="left", fill="x", expand=True)
         ttk.Button(out_row, text="Choose", command=self.choose_output).pack(side="left", padx=6)
 
-        # Preview
-        mid = ttk.Frame(self.root, style="TFrame")
+        # ============================================================
+        # PREVIEW
+        # ============================================================
+        mid = ttk.Frame(self.root)
         mid.pack(fill="x", **p)
 
         ttk.Label(mid, text="Preview").grid(row=0, column=0, sticky="w")
@@ -296,25 +247,28 @@ class ImageOptimizerApp:
             width=self.preview_size[0],
             height=self.preview_size[1],
             bg=self.palette["panel"],
-            anchor="center"
+            anchor="center",
+            text="No preview",
+            fg=self.palette["muted"],
+            font=("Segoe UI", 12)
         )
-        self.preview_box.grid(row=1, column=0, padx=6, pady=6)
+        self.preview_box.grid(row=1, column=0, padx=6, pady=10)
+        self.preview_box.grid_propagate(False)
 
-        # Options
-        opts = ttk.Frame(mid, style="TFrame")
-        opts.grid(row=1, column=1, sticky="n", padx=12)
+        # OPTIONS
+        opts = ttk.Frame(mid)
+        opts.grid(row=1, column=1, sticky="n", padx=18)
 
         ttk.Label(opts, text="Quality:").pack(anchor="w")
-        ttk.Scale(opts, from_=30, to=100, orient="horizontal", variable=self.quality, length=200).pack(anchor="w", pady=6)
+        ttk.Scale(opts, from_=30, to=100, orient="horizontal",
+                  variable=self.quality, length=220).pack(anchor="w", pady=6)
 
-        ttk.Checkbutton(opts, text="Optimize PNG palette", variable=self.png_palette).pack(anchor="w", pady=4)
-        ttk.Checkbutton(opts, text="Always save as JPG", variable=self.force_jpg).pack(anchor="w", pady=4)
+        ttk.Checkbutton(opts, text="Optimize PNG palette", variable=self.png_palette).pack(anchor="w", pady=6)
 
-        ttk.Button(opts, text="Preview", command=self.show_preview).pack(side="left", pady=10, padx=4)
-        ttk.Button(opts, text="Start", command=self.start).pack(side="left", pady=10)
+        ttk.Button(opts, text="Preview", command=self.show_preview).pack(pady=10)
 
-        # Progress
-        bottom = ttk.Frame(self.root, style="TFrame")
+        # PROGRESS
+        bottom = ttk.Frame(self.root)
         bottom.pack(fill="x", **p)
 
         self.progressbar = ttk.Progressbar(bottom, maximum=100, variable=self.progress)
@@ -326,7 +280,9 @@ class ImageOptimizerApp:
         self.status_label = ttk.Label(self.root, text="")
         self.status_label.pack(anchor="w", padx=14)
 
-    # =========================== ACTIONS =============================
+    # ========================================================
+    # LOGIC
+    # ========================================================
     def choose_file(self):
         p = filedialog.askopenfilename(filetypes=[("Images", "*.jpg;*.jpeg;*.png;*.webp")])
         if p:
@@ -337,7 +293,7 @@ class ImageOptimizerApp:
         p = filedialog.askdirectory()
         if p:
             self.input_path.set(p)
-            self.preview_box.config(image="", text="Folder selected")
+            self.preview_box.config(image="", text="Folder selected", fg=self.palette["muted"])
 
     def choose_output(self):
         p = filedialog.askdirectory()
@@ -350,7 +306,7 @@ class ImageOptimizerApp:
         if os.path.isfile(path):
             self.update_preview(path)
         else:
-            self.preview_box.config(image="", text="Folder dropped")
+            self.preview_box.config(image="", text="Folder dropped", fg=self.palette["muted"])
 
     def update_preview(self, path):
         try:
@@ -359,7 +315,7 @@ class ImageOptimizerApp:
             self.preview_image = ImageTk.PhotoImage(img)
             self.preview_box.config(image=self.preview_image, text="")
         except:
-            self.preview_box.config(image="", text="Cannot preview")
+            self.preview_box.config(image="", text="Cannot preview", fg=self.palette["muted"])
 
     def show_preview(self):
         path = self.input_path.get()
@@ -368,7 +324,6 @@ class ImageOptimizerApp:
         else:
             messagebox.showinfo("Preview", "Select a file first.")
 
-    # ========================== PROCESSING ===========================
     def start(self):
         inp = self.input_path.get()
         out = self.output_path.get()
@@ -381,14 +336,13 @@ class ImageOptimizerApp:
             return
 
         self.progress.set(0)
-        self.progress_label.config(text="Progress: 0%")
 
         q = self.quality.get()
         pal = self.png_palette.get()
         fj = self.force_jpg.get()
 
         def update(done, total, fn):
-            pct = int((done / total) * 100) if total else 100
+            pct = int((done / total) * 100)
             self.root.after(0, lambda: self.update_progress(pct, done, total, fn))
 
         def worker():
@@ -403,20 +357,16 @@ class ImageOptimizerApp:
 
                 self.root.after(0, lambda: messagebox.showinfo("Done", "Optimization completed"))
             except Exception as e:
-                traceback.print_exc()
                 self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
 
         threading.Thread(target=worker, daemon=True).start()
 
     def update_progress(self, pct, done, total, fn):
         self.progress.set(pct)
-        self.progress_label.config(text=f"Progress: {pct}%  ({done}/{total})")
-        self.status_label.config(text=os.path.basename(fn) if fn else "")
+        self.progress_label.config(text=f"Progress: {pct}% ({done}/{total})")
+        self.status_label.config(text=os.path.basename(fn))
 
 
-# =====================================================================
-#                               RUN
-# =====================================================================
 def main():
     root = TkinterDnD.Tk()
     ImageOptimizerApp(root)
